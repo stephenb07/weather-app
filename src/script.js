@@ -1,3 +1,5 @@
+import './styles.css';
+
 const API_KEY = '6526a943a59ef9733dcf7d387023b1cc';
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 
@@ -128,13 +130,13 @@ function processForecastData(forecastList) {
 // Display forecast data
 function displayForecast(forecastData) {
     if (!forecastData) return;
-
+    
     forecast.classList.remove('hidden');
-    forecastData.innerHTML = forecastData.map(day => `
-        <div class="bg-white/10 p-4 rounded-lg hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
+    forecastData.innerHTML = forecastData.map((day, index) => `
+        <div class="forecast-card bg-white/10 p-4 rounded-lg hover:bg-white/20 transition-all duration-300 transform hover:-translate-y-1">
             <div class="text-center">
                 <p class="text-sm text-white/80">${new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                <i class="${getWeatherIconClass(day.icon)} text-3xl my-2 text-blue-200"></i>
+                <i class="${getWeatherIconClass(day.icon)} text-3xl my-2 weather-icon text-blue-200"></i>
                 <p class="text-lg font-bold text-white">${Math.round(day.temp)}°${currentUnit === 'metric' ? 'C' : 'F'}</p>
                 <p class="text-sm text-white/80 capitalize">${day.description}</p>
             </div>
@@ -185,15 +187,6 @@ async function refreshWeather() {
     }
 }
 
-// DOM Elements
-const cityInput = document.getElementById('cityInput');
-const searchButton = document.getElementById('searchButton');
-const weatherData = document.getElementById('weatherData');
-const locationButton = document.getElementById('locationButton');
-const unitToggle = document.getElementById('unitToggle');
-const forecast = document.getElementById('forecast');
-const forecastData = document.getElementById('forecastData');
-
 // Input validation
 function validateInput(input) {
     // Remove extra spaces and special characters
@@ -238,46 +231,48 @@ function displayError(error) {
 // Display weather data
 function displayWeather(data) {
     weatherData.innerHTML = `
-        <div class="space-y-6 transform transition-all duration-500 animate-bounce-in">
-            <div class="text-center">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 animate-slide-up">${data.city}, ${data.country}</h2>
-                <div class="flex justify-center items-center animate-fade-in">
-                    <i class="${getWeatherIconClass(data.icon)} text-5xl sm:text-6xl md:text-7xl mr-4 animate-float text-blue-200"></i>
+        <div class="weather-card">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl sm:text-3xl text-white mb-2 animate-fade-in">
+                    ${data.city}, ${data.country}
+                </h2>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
+                <div class="flex items-center justify-center animate-bounce-in">
+                    <i class="${getWeatherIconClass(data.icon)} text-5xl sm:text-6xl md:text-7xl mr-4 weather-icon text-blue-200"></i>
                     <div class="transform transition-all duration-300 hover:scale-105">
-                        <p class="text-3xl sm:text-4xl md:text-5xl font-bold transition-all hover:scale-110">
+                        <p class="text-3xl sm:text-4xl md:text-5xl font-bold text-white transition-all hover:scale-110">
                             ${data.temp}°${currentUnit === 'metric' ? 'C' : 'F'}
                         </p>
-                        <p class="text-lg sm:text-xl md:text-2xl opacity-90 transition-all group-hover:opacity-100">
-                            ${data.feelsLike}°${currentUnit === 'metric' ? 'C' : 'F'}
+                        <p class="text-lg sm:text-xl md:text-2xl text-white/90 capitalize">
+                            ${data.description}
                         </p>
                     </div>
                 </div>
-                <p class="capitalize text-lg sm:text-xl mt-2 font-medium animate-fade-in">${data.description}</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 bg-white/10 rounded-lg p-4 sm:p-6
-                        hover:bg-white/20 transition-all duration-500 transform hover:scale-[1.02] animate-slide-up">
-                <div class="text-center p-3 rounded-lg hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 group">
-                    <i class="fas fa-thermometer-half text-xl sm:text-2xl mb-2 transition-transform group-hover:scale-110 text-blue-200"></i>
-                    <p class="text-sm sm:text-base opacity-80 group-hover:opacity-100">Feels Like</p>
-                    <p class="font-semibold text-sm sm:text-base group-hover:text-blue-200">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div class="weather-detail text-center p-3 rounded-lg bg-white/10 hover:bg-white/20">
+                    <i class="fas fa-thermometer-half text-xl sm:text-2xl mb-2 text-blue-200"></i>
+                    <p class="text-sm sm:text-base text-white/80">Feels Like</p>
+                    <p class="font-semibold text-white">
                         ${data.feelsLike}°${currentUnit === 'metric' ? 'C' : 'F'}
                     </p>
                 </div>
-                <div class="text-center p-3 rounded-lg hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 group">
-                    <i class="fas fa-tint text-xl sm:text-2xl mb-2 transition-transform group-hover:scale-110 text-blue-200"></i>
-                    <p class="text-sm sm:text-base opacity-80 group-hover:opacity-100">Humidity</p>
-                    <p class="font-semibold text-sm sm:text-base group-hover:text-blue-200">${data.humidity}%</p>
+                
+                <div class="weather-detail text-center p-3 rounded-lg bg-white/10 hover:bg-white/20">
+                    <i class="fas fa-water text-xl sm:text-2xl mb-2 text-blue-200"></i>
+                    <p class="text-sm sm:text-base text-white/80">Humidity</p>
+                    <p class="font-semibold text-white">${data.humidity}%</p>
                 </div>
-                <div class="text-center p-3 rounded-lg hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 group">
-                    <i class="fas fa-wind text-xl sm:text-2xl mb-2 transition-transform group-hover:scale-110 text-blue-200"></i>
-                    <p class="text-sm sm:text-base opacity-80 group-hover:opacity-100">Wind Speed</p>
-                    <p class="font-semibold text-sm sm:text-base group-hover:text-blue-200">${data.windSpeed} m/s</p>
-                </div>
-                <div class="text-center p-3 rounded-lg hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 group">
-                    <i class="fas fa-cloud text-xl sm:text-2xl mb-2 transition-transform group-hover:scale-110 text-blue-200"></i>
-                    <p class="text-sm sm:text-base opacity-80 group-hover:opacity-100">Condition</p>
-                    <p class="font-semibold text-sm sm:text-base group-hover:text-blue-200">${data.main}</p>
+                
+                <div class="weather-detail text-center p-3 rounded-lg bg-white/10 hover:bg-white/20">
+                    <i class="fas fa-wind text-xl sm:text-2xl mb-2 text-blue-200"></i>
+                    <p class="text-sm sm:text-base text-white/80">Wind Speed</p>
+                    <p class="font-semibold text-white">
+                        ${data.windSpeed} ${currentUnit === 'metric' ? 'm/s' : 'mph'}
+                    </p>
                 </div>
             </div>
         </div>
@@ -309,85 +304,75 @@ function getWeatherIconClass(iconCode) {
     return icons[iconCode] || 'fas fa-question';
 }
 
-// Event Listeners
-searchButton.addEventListener('click', async () => {
-    const cityName = validateInput(cityInput.value);
-    
-    if (!cityName) {
-        displayError({ type: ErrorTypes.EMPTY_INPUT });
-        cityInput.classList.add('border-red-500', 'animate-shake');
-        setTimeout(() => cityInput.classList.remove('border-red-500', 'animate-shake'), 1000);
-        return;
+document.addEventListener('DOMContentLoaded', () => {
+    const cityInput = document.getElementById('cityInput');
+    const searchButton = document.getElementById('searchButton');
+    const weatherData = document.getElementById('weatherData');
+    const locationButton = document.getElementById('locationButton');
+    const unitToggle = document.getElementById('unitToggle');
+    const forecast = document.getElementById('forecast');
+    const forecastData = document.getElementById('forecastData');
+
+    function initializeEventListeners() {
+        searchButton.addEventListener('click', handleSearch);
+        locationButton.addEventListener('click', handleLocationSearch);
+        unitToggle.addEventListener('click', toggleUnit);
+        cityInput.addEventListener('keypress', handleEnterKey);
+        cityInput.addEventListener('input', handleInput);
     }
 
-    setLoading(true);
-    try {
-        lastCity = cityName;
-        lastCoords = null;
-        const data = await getWeatherData(cityName);
-        displayWeather(data);
+    function handleSearch() {
+        const cityName = validateInput(cityInput.value);
         
-        if (data.coords) {
-            const forecastData = await getForecastData(data.coords);
-            displayForecast(forecastData);
+        if (!cityName) {
+            displayError({ type: ErrorTypes.EMPTY_INPUT });
+            cityInput.classList.add('border-red-500', 'animate-shake');
+            setTimeout(() => cityInput.classList.remove('border-red-500', 'animate-shake'), 1000);
+            return;
         }
-    } catch (error) {
-        displayError(error);
-    } finally {
-        setLoading(false);
-    }
-});
 
-locationButton.addEventListener('click', async () => {
-    setLoading(true);
-    try {
-        const coords = await getUserLocation();
-        lastCoords = coords;
-        lastCity = null;
-        
-        const data = await getWeatherData(null, coords);
-        displayWeather(data);
-        
-        const forecastData = await getForecastData(coords);
-        displayForecast(forecastData);
-    } catch (error) {
-        displayError(error);
-    } finally {
-        setLoading(false);
-    }
-});
-
-unitToggle.addEventListener('click', toggleUnit);
-
-cityInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        searchButton.click();
-    }
-});
-
-cityInput.addEventListener('input', () => {
-    cityInput.classList.remove('border-red-500');
-});
-
-// Add shake animation to Tailwind config
-if (window.tailwind) {
-    window.tailwind.config = {
-        theme: {
-            extend: {
-                ...window.tailwind.config.theme.extend,
-                keyframes: {
-                    ...window.tailwind.config.theme.extend.keyframes,
-                    shake: {
-                        '0%, 100%': { transform: 'translateX(0)' },
-                        '25%': { transform: 'translateX(-5px)' },
-                        '75%': { transform: 'translateX(5px)' }
-                    }
-                },
-                animation: {
-                    ...window.tailwind.config.theme.extend.animation,
-                    shake: 'shake 0.2s ease-in-out 0s 2'
+        setLoading(true);
+        getWeatherData(cityName)
+            .then(data => {
+                displayWeather(data);
+                if (data.coords) {
+                    getForecastData(data.coords)
+                        .then(forecastData => displayForecast(forecastData));
                 }
-            }
+            })
+            .catch(error => displayError(error))
+            .finally(() => setLoading(false));
+    }
+
+    function handleLocationSearch() {
+        setLoading(true);
+        getUserLocation()
+            .then(coords => {
+                lastCoords = coords;
+                lastCity = null;
+                getWeatherData(null, coords)
+                    .then(data => {
+                        displayWeather(data);
+                        getForecastData(coords)
+                            .then(forecastData => displayForecast(forecastData));
+                    });
+            })
+            .catch(error => displayError(error))
+            .finally(() => setLoading(false));
+    }
+
+    function handleEnterKey(e) {
+        if (e.key === 'Enter') {
+            searchButton.click();
         }
-    };
-}
+    }
+
+    function handleInput() {
+        cityInput.classList.remove('border-red-500');
+    }
+
+    initializeEventListeners();
+
+    // Add loaded class to body
+    document.body.classList.add('loaded');
+});
