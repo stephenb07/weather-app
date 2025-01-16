@@ -73,35 +73,39 @@
     </script>
   </head>
   <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 transition-all duration-500" id="app-body">
-    <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 sm:p-6 md:p-8 w-full max-w-2xl shadow-2xl animate-fade-in">
+    <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 sm:p-6 md:p-8 w-full max-w-2xl shadow-2xl animate-fade-in
+                hover:shadow-3xl hover:bg-white/25 transition-all duration-500">
       
       <!-- Settings Bar -->
       <div class="flex justify-between items-center mb-6 animate-bounce-in">
         <button 
           id="locationButton" 
           class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
-                 transition-all duration-300 flex items-center gap-2 group"
+                 transition-all duration-300 flex items-center gap-2 group
+                 hover:scale-105 hover:shadow-lg hover:-translate-y-0.5"
         >
           <i class="fas fa-location-dot group-hover:animate-bounce"></i>
-          <span>Use My Location</span>
+          <span class="group-hover:translate-x-0.5 transition-transform">Use My Location</span>
         </button>
         
         <div class="flex items-center gap-4">
           <button 
             id="unitToggle" 
             class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
-                   transition-all duration-300 flex items-center gap-2"
+                   transition-all duration-300 flex items-center gap-2 group
+                   hover:scale-105 hover:shadow-lg hover:-translate-y-0.5"
           >
-            <i class="fas fa-temperature-half"></i>
-            <span>°C</span>
+            <i class="fas fa-temperature-half group-hover:rotate-12 transition-transform"></i>
+            <span class="group-hover:translate-x-0.5 transition-transform">°C</span>
           </button>
           <button 
             id="themeToggle" 
             class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
-                   transition-all duration-300 flex items-center gap-2"
+                   transition-all duration-300 flex items-center gap-2 group
+                   hover:scale-105 hover:shadow-lg hover:-translate-y-0.5"
           >
-            <i class="fas fa-palette text-lg"></i>
-            <span>Theme</span>
+            <i class="fas fa-palette text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+            <span class="group-hover:translate-x-0.5 transition-transform">Theme</span>
           </button>
         </div>
       </div>
@@ -116,7 +120,7 @@
                  border-2 border-blue-300/50 bg-white/10 text-white placeholder-white/60
                  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
                  transition-all duration-300 text-lg
-                 hover:bg-white/20 transform hover:-translate-y-0.5"
+                 hover:bg-white/20 transform hover:-translate-y-0.5 hover:shadow-lg"
         >
         <button 
           id="searchButton" 
@@ -126,13 +130,13 @@
                  flex items-center justify-center gap-2 group
                  focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-500"
         >
-          <i class="fas fa-search text-lg transition-transform group-hover:rotate-12"></i>
-          <span class="transition-transform group-hover:translate-x-1">Search</span>
+          <i class="fas fa-search text-lg group-hover:rotate-12 transition-transform"></i>
+          <span class="group-hover:translate-x-1 transition-transform">Search</span>
         </button>
       </div>
 
       <!-- Current Weather -->
-      <div id="weatherCard" class="text-white mb-6">
+      <div id="weatherCard" class="text-white mb-6 transform hover:scale-[1.02] transition-all duration-500">
         <div id="weatherData" class="mt-6">
           <!-- Weather Info (will be populated by JavaScript) -->
         </div>
@@ -140,7 +144,7 @@
 
       <!-- 5-Day Forecast -->
       <div id="forecast" class="hidden mt-8 pb-4">
-        <h3 class="text-white text-xl font-semibold mb-4">5-Day Forecast</h3>
+        <h3 class="text-white text-xl font-semibold mb-4 hover:text-white/90 transition-colors">5-Day Forecast</h3>
         <div id="forecastData" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <!-- Forecast cards will be inserted here -->
         </div>
