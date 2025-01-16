@@ -95,6 +95,14 @@
             <i class="fas fa-temperature-half"></i>
             <span>°C</span>
           </button>
+          <button 
+            id="themeToggle" 
+            class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
+                   transition-all duration-300 flex items-center gap-2"
+          >
+            <i class="fas fa-palette text-lg"></i>
+            <span>Theme</span>
+          </button>
         </div>
       </div>
 
@@ -125,19 +133,13 @@
 
       <!-- Current Weather -->
       <div id="weatherCard" class="text-white mb-6">
-        <div id="weatherData" class="text-center transform transition-all duration-500">
-          <div class="flex items-center justify-center space-x-3 p-4 bg-white/10 rounded-lg
-                      hover:bg-white/20 transition-all duration-300 group cursor-pointer">
-            <i class="fas fa-cloud-sun text-4xl sm:text-5xl animate-float text-blue-200 group-hover:text-blue-100"></i>
-            <p class="text-lg sm:text-xl transition-all duration-300 group-hover:translate-x-1">
-              Enter a city to see weather details
-            </p>
-          </div>
+        <div id="weatherData" class="mt-6">
+          <!-- Weather Info (will be populated by JavaScript) -->
         </div>
       </div>
 
       <!-- 5-Day Forecast -->
-      <div id="forecast" class="hidden animate-slide-up">
+      <div id="forecast" class="hidden mt-8 pb-4">
         <h3 class="text-white text-xl font-semibold mb-4">5-Day Forecast</h3>
         <div id="forecastData" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <!-- Forecast cards will be inserted here -->
@@ -146,22 +148,6 @@
 
     </div>
     
-    <!-- Theme Toggle Button -->
-    <div class="fixed bottom-8 left-0 right-0 flex justify-center">
-      <div class="relative group/theme">
-        <!-- Theme Button -->
-        <button 
-          id="themeToggle" 
-          class="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm
-                 text-white font-semibold rounded-lg shadow-lg
-                 transition-all duration-300 hover:-translate-y-1
-                 flex items-center gap-2"
-        >
-          <i class="fas fa-palette text-lg group-hover/theme:rotate-12 transition-transform"></i>
-          <span class="min-w-[120px] text-center">Change Theme</span>
-        </button>
-      </div>
-    </div>
     <script type="module" src="src/script.js"></script>
     
     <!-- Service Worker Registration -->

@@ -123,13 +123,13 @@ async function getWeatherData(city, coords = null) {
     try {
         let url;
         if (coords) {
-            url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}&appid=${API_KEY}&units=metric`;
+            url = `${BASE_URL}/weather?lat=${coords.lat}&lon=${coords.lon}&appid=${API_KEY}&units=metric`;
         } else {
-            url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+            if (!city) throw { type: ErrorTypes.EMPTY_INPUT };
+            url = `${BASE_URL}/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
         }
 
         const response = await fetch(url);
-        
         if (!response.ok) {
             if (response.status === 404) {
                 throw { type: ErrorTypes.CITY_NOT_FOUND };
@@ -137,26 +137,10 @@ async function getWeatherData(city, coords = null) {
             throw { type: ErrorTypes.API_ERROR };
         }
 
-        const data = await response.json();
-        return {
-            city: data.name,
-            country: data.sys.country,
-            temp: Math.round(data.main.temp),
-            tempMin: Math.round(data.main.temp_min),
-            tempMax: Math.round(data.main.temp_max),
-            feels_like: Math.round(data.main.feels_like),
-            humidity: data.main.humidity,
-            wind: Math.round(data.wind.speed),
-            description: data.weather[0].description,
-            icon: data.weather[0].icon,
-            coords: {
-                lat: data.coord.lat,
-                lon: data.coord.lon
-            }
-        };
+        return await response.json();
     } catch (error) {
         if (!error.type) {
-            error.type = ErrorTypes.NETWORK_ERROR;
+            error = { type: ErrorTypes.API_ERROR };
         }
         throw error;
     }
@@ -188,7 +172,7 @@ async function getCityCoordinates(city) {
     }
 }
 
-// Get user's location
+// Get user's location with high accuracy
 function getUserLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -196,16 +180,37 @@ function getUserLocation() {
             return;
         }
 
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
+
         navigator.geolocation.getCurrentPosition(
-            position => {
+            (position) => {
                 resolve({
                     lat: position.coords.latitude,
                     lon: position.coords.longitude
                 });
             },
-            () => {
-                reject({ type: ErrorTypes.GEOLOCATION_DENIED });
-            }
+            (error) => {
+                let errorType;
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorType = ErrorTypes.GEOLOCATION_DENIED;
+                        break;
+                    case error.TIMEOUT:
+                        errorType = ErrorTypes.API_ERROR;
+                        break;
+                    default:
+                        errorType = ErrorTypes.API_ERROR;
+                }
+                reject({ 
+                    type: errorType,
+                    details: error.message 
+                });
+            },
+            options
         );
     });
 }
@@ -214,43 +219,63 @@ function getUserLocation() {
 async function getForecastData(coords) {
     try {
         const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/forecast?lat=${coords.lat}&lon=${coords.lon}&appid=${API_KEY}&units=metric`
+            `${BASE_URL}/forecast?lat=${coords.lat}&lon=${coords.lon}&appid=${API_KEY}&units=metric`
         );
-
-        if (!response.ok) throw new Error('Failed to fetch forecast');
-
+        
+        if (!response.ok) throw { type: ErrorTypes.API_ERROR };
+        
         const data = await response.json();
-        const dailyData = {};
-
-        // Group forecast data by day
+        const uniqueDays = new Map();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+        
+        // Get one forecast per day for next 5 days
         data.list.forEach(item => {
-            const date = new Date(item.dt * 1000).toLocaleDateString();
-            if (!dailyData[date]) {
-                dailyData[date] = {
-                    temp_min: item.main.temp_min,
-                    temp_max: item.main.temp_max,
-                    icon: item.weather[0].icon,
-                    description: item.weather[0].description
-                };
-            } else {
-                dailyData[date].temp_min = Math.min(dailyData[date].temp_min, item.main.temp_min);
-                dailyData[date].temp_max = Math.max(dailyData[date].temp_max, item.main.temp_max);
+            const date = new Date(item.dt * 1000);
+            date.setHours(0, 0, 0, 0); // Set to start of day for comparison
+            const dateKey = date.toISOString().split('T')[0];
+            
+            // Skip if we already have this day or if it's today/past
+            if (!uniqueDays.has(dateKey) && date > today) {
+                // Try to get the noon forecast for each day
+                const forecastDate = new Date(item.dt * 1000);
+                const hour = forecastDate.getHours();
+                const existingForecast = uniqueDays.get(dateKey);
+                
+                if (!existingForecast || Math.abs(hour - 12) < Math.abs(existingForecast.date.getHours() - 12)) {
+                    uniqueDays.set(dateKey, {
+                        date: forecastDate,
+                        forecast: item
+                    });
+                }
             }
         });
 
-        // Convert to array and take next 5 days
-        return Object.entries(dailyData)
-            .slice(1, 6)
-            .map(([date, data]) => ({
-                date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-                temp_min: Math.round(data.temp_min),
-                temp_max: Math.round(data.temp_max),
-                icon: data.icon,
-                description: data.description
-            }));
+        // Convert map to array and sort by date
+        const forecasts = Array.from(uniqueDays.values())
+            .sort((a, b) => a.date - b.date)
+            .slice(0, 5)
+            .map(item => item.forecast);
+
+        return forecasts;
     } catch (error) {
-        console.error('Error fetching forecast:', error);
-        return [];
+        console.error('Forecast error:', error);
+        throw error;
+    }
+}
+
+// Get more accurate location
+async function getReverseGeocode(coords) {
+    try {
+        // Force location to Ottawa/Greely area
+        return {
+            name: "Greely",
+            country: "CA",
+            state: "Ontario"
+        };
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        throw error;
     }
 }
 
@@ -277,39 +302,68 @@ async function getSimilarCities(searchQuery) {
     }
 }
 
+// Format date and time
+function formatDateTime(timestamp) {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    }).format(date);
+}
+
 // Display weather data
 function displayWeather(data) {
     const weatherData = document.getElementById('weatherData');
-    weatherData.innerHTML = `
-        <div class="weather-card text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
-            <div class="flex justify-center items-center mb-4">
-                <i class="fas ${getWeatherIcon(data.icon)} text-6xl text-yellow-300 mr-4 animate-float"></i>
-                <div>
-                    <h2 class="text-4xl font-bold temp-transition" data-temp="${data.temp}">${data.temp}°C</h2>
-                    <p class="text-lg capitalize">${data.description}</p>
+    if (!weatherData) return;
+
+    const temp = data.main.temp;
+    const feelsLike = data.main.feels_like;
+    
+    const html = `
+        <div class="text-center">
+            <h2 class="text-4xl font-bold mb-4">${data.name}, ${data.sys.country}</h2>
+            <div class="flex flex-col items-center justify-center gap-4">
+                <!-- Temperature -->
+                <div class="text-6xl font-bold">
+                    <span data-temp="${temp}">${Math.round(temp)}°${window.unit || 'C'}</span>
                 </div>
-            </div>
-            <h3 class="text-2xl font-semibold mb-2">${data.city}, ${data.country}</h3>
-            <div class="grid grid-cols-2 gap-4 mt-4">
-                <div class="bg-white/5 p-3 rounded-lg">
-                    <i class="fas fa-temperature-low text-blue-300"></i>
-                    <p>Min: <span class="temp-transition" data-temp="${data.tempMin}">${data.tempMin}°C</span></p>
+                
+                <!-- Weather Description -->
+                <div class="flex items-center gap-2">
+                    <i class="fas ${getWeatherIcon(data.weather[0].icon)} text-4xl text-yellow-300"></i>
+                    <span class="text-xl capitalize">${data.weather[0].description}</span>
                 </div>
-                <div class="bg-white/5 p-3 rounded-lg">
-                    <i class="fas fa-temperature-high text-red-300"></i>
-                    <p>Max: <span class="temp-transition" data-temp="${data.tempMax}">${data.tempMax}°C</span></p>
-                </div>
-                <div class="bg-white/5 p-3 rounded-lg">
-                    <i class="fas fa-wind text-gray-300"></i>
-                    <p>Wind: ${data.wind} m/s</p>
-                </div>
-                <div class="bg-white/5 p-3 rounded-lg">
-                    <i class="fas fa-tint text-blue-300"></i>
-                    <p>Humidity: ${data.humidity}%</p>
+                
+                <!-- Additional Info -->
+                <div class="grid grid-cols-2 gap-4 text-lg mt-4">
+                    <div>
+                        <i class="fas fa-temperature-low text-blue-300"></i>
+                        Feels like: <span data-temp="${feelsLike}">${Math.round(feelsLike)}°${window.unit || 'C'}</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-tint text-blue-300"></i>
+                        Humidity: ${data.main.humidity}%
+                    </div>
+                    <div>
+                        <i class="fas fa-wind text-blue-300"></i>
+                        Wind: ${Math.round(data.wind.speed * 3.6)} km/h
+                    </div>
+                    <div>
+                        <i class="fas fa-compress-arrows-alt text-blue-300"></i>
+                        Pressure: ${data.main.pressure} hPa
+                    </div>
                 </div>
             </div>
         </div>
     `;
+
+    weatherData.innerHTML = html;
+    document.getElementById('weatherCard').classList.remove('hidden');
 }
 
 // Display similar cities
@@ -354,10 +408,8 @@ function displaySimilarCities(cities) {
                 setLoading(true);
                 const weatherData = await getWeatherData(cityName, { lat, lon });
                 displayWeather(weatherData);
-                if (weatherData.coords) {
-                    const forecastData = await getForecastData(weatherData.coords);
-                    displayForecast(forecastData);
-                }
+                const forecastData = await getForecastData({ lat, lon });
+                displayForecast(forecastData);
             } catch (error) {
                 displayError(error);
             } finally {
@@ -371,36 +423,46 @@ function displaySimilarCities(cities) {
 function displayForecast(forecastData) {
     const forecast = document.getElementById('forecast');
     const forecastContent = document.getElementById('forecastData');
-
-    if (forecastData.length === 0) {
-        forecast.classList.add('hidden');
+    
+    if (!forecast || !forecastContent || !forecastData.length) {
+        if (forecast) forecast.classList.add('hidden');
         return;
     }
 
-    forecastContent.innerHTML = forecastData.map(day => `
-        <div class="forecast-card bg-white/10 backdrop-blur-sm p-3 rounded-lg text-center transform hover:scale-105 transition-transform">
-            <h4 class="font-semibold mb-1 text-sm">${day.date}</h4>
-            <i class="fas ${getWeatherIcon(day.icon)} text-2xl mb-1 text-yellow-300"></i>
-            <p class="text-xs capitalize mb-1">${day.description}</p>
-            <div class="flex justify-between text-sm">
-                <span class="temp-transition" data-temp="${day.temp_min}">${day.temp_min}°C</span>
-                <span class="temp-transition" data-temp="${day.temp_max}">${day.temp_max}°C</span>
+    const forecastHTML = forecastData.map(day => {
+        const date = new Date(day.dt * 1000);
+        const minTemp = day.main.temp_min;
+        const maxTemp = day.main.temp_max;
+        
+        return `
+            <div class="forecast-card bg-white/10 backdrop-blur-sm p-3 rounded-lg text-center transform hover:scale-105 transition-transform">
+                <h4 class="font-semibold mb-1">${date.toLocaleDateString('en-US', { weekday: 'short' })}</h4>
+                <div class="text-sm text-white/80 mb-2">${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                <i class="fas ${getWeatherIcon(day.weather[0].icon)} text-2xl mb-2 text-yellow-300"></i>
+                <div class="flex flex-col gap-1 text-sm">
+                    <span data-temp="${maxTemp}">High: ${Math.round(maxTemp)}°${window.unit || 'C'}</span>
+                    <span data-temp="${minTemp}">Low: ${Math.round(minTemp)}°${window.unit || 'C'}</span>
+                </div>
+                <div class="text-sm text-white/80 mt-1">${day.weather[0].description}</div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
+    forecastContent.innerHTML = forecastHTML;
     forecast.classList.remove('hidden');
 }
 
 // Display error message
 function displayError(error) {
-    const weatherData = document.getElementById('weatherData');
-    const errorConfig = ErrorMessages[error.type] || ErrorMessages[ErrorTypes.API_ERROR];
+    const weatherContainer = document.getElementById('weatherData');
+    const message = ErrorMessages[error.type]?.message || 'Something went wrong. Please try again later.';
+    const icon = ErrorMessages[error.type]?.icon || 'fa-exclamation-circle';
     
-    weatherData.innerHTML = `
-        <div class="text-center p-6 rounded-lg bg-red-500/10 backdrop-blur-sm animate-fade-in">
-            <i class="fas ${errorConfig.icon} text-5xl text-red-400 mb-4"></i>
-            <p class="text-xl text-red-100">${errorConfig.message}</p>
+    weatherContainer.innerHTML = `
+        <div class="error-message text-center p-6 rounded-lg bg-white/10 backdrop-blur-sm">
+            <i class="fas ${icon} text-4xl text-red-400 mb-4"></i>
+            <p class="text-lg text-white">${message}</p>
+            ${error.details ? `<p class="text-sm text-white/70 mt-2">${error.details}</p>` : ''}
         </div>
     `;
 }
@@ -471,18 +533,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update all temperature displays with animation
         const tempElements = document.querySelectorAll('[data-temp]');
         tempElements.forEach(element => {
-            element.classList.add('animate-bounce-in');
-            const celsius = parseFloat(element.dataset.temp);
-            const fahrenheit = (celsius * 9/5) + 32;
-            element.textContent = isCelsius ? 
-                `${Math.round(celsius)}°C` : 
-                `${Math.round(fahrenheit)}°F`;
-            
-            // Remove animation class after it completes
-            setTimeout(() => {
-                element.classList.remove('animate-bounce-in');
-            }, 800);
+            if (element) {
+                element.classList.add('animate-bounce-in');
+                const celsius = parseFloat(element.dataset.temp);
+                const fahrenheit = (celsius * 9/5) + 32;
+                const temp = Math.round(isCelsius ? celsius : fahrenheit);
+                const unit = isCelsius ? 'C' : 'F';
+                
+                if (element.textContent.includes('Low:')) {
+                    element.textContent = `Low: ${temp}°${unit}`;
+                } else if (element.textContent.includes('High:')) {
+                    element.textContent = `High: ${temp}°${unit}`;
+                } else if (element.textContent.includes('Feels like:')) {
+                    element.textContent = `Feels like: ${temp}°${unit}`;
+                } else {
+                    element.textContent = `${temp}°${unit}`;
+                }
+                
+                setTimeout(() => {
+                    element.classList.remove('animate-bounce-in');
+                }, 800);
+            }
         });
+
+        // Store the preference
+        window.unit = isCelsius ? 'C' : 'F';
     }
 
     // Add temperature unit toggle event listener
@@ -499,6 +574,25 @@ document.addEventListener('DOMContentLoaded', () => {
         cityInput.addEventListener('input', handleInput);
     }
     
+    async function handleLocationSearch() {
+        try {
+            setLoading(true);
+            const coords = await getUserLocation();
+            
+            // Get weather data
+            const weatherData = await getWeatherData(null, coords);
+            
+            displayWeather(weatherData);
+            const forecastData = await getForecastData(coords);
+            displayForecast(forecastData);
+        } catch (error) {
+            console.error('Location error:', error);
+            displayError(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     function handleSearch() {
         const cityName = validateInput(cityInput.value);
         
@@ -514,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
             getWeatherData(cityName)
                 .then(data => {
                     displayWeather(data);
-                    if (data.coords) {
-                        getForecastData(data.coords)
+                    if (data.wind) {
+                        getForecastData({ lat: data.coord.lat, lon: data.coord.lon })
                             .then(forecastData => displayForecast(forecastData));
                     }
                 })
@@ -531,21 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             displayError(error);
         }
-    }
-
-    function handleLocationSearch() {
-        setLoading(true);
-        getUserLocation()
-            .then(coords => getWeatherData(null, coords))
-            .then(data => {
-                displayWeather(data);
-                if (data.coords) {
-                    getForecastData(data.coords)
-                        .then(forecastData => displayForecast(forecastData));
-                }
-            })
-            .catch(error => displayError(error))
-            .finally(() => setLoading(false));
     }
 
     initializeEventListeners();

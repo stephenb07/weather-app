@@ -138,6 +138,51 @@ input {
     opacity: 0.9;
 }
 
+/* Skeleton Loading Animation */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+}
+
+.skeleton-text {
+    height: 20px;
+    margin: 8px 0;
+}
+
+.skeleton-title {
+    width: 200px;
+    height: 32px;
+}
+
+.skeleton-temp {
+    width: 120px;
+    height: 48px;
+}
+
+.skeleton-desc {
+    width: 150px;
+    height: 24px;
+}
+
+.skeleton-container {
+    display: none;
+}
+
+.loading .skeleton-container {
+    display: block;
+}
+
+.loading .weather-info {
+    display: none;
+}
+
 @keyframes gradientFlow {
     0% {
         background-position: 0% 50%;
@@ -201,5 +246,14 @@ input {
     }
     75% {
         transform: translateX(5px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
     }
 }
