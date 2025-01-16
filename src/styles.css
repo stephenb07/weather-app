@@ -1,137 +1,205 @@
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Base styles */
+body {
+    min-height: 100vh;
+    position: relative;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        var(--gradient-start, #0052cc) 0%,
+        var(--gradient-mid, #2566c9) 25%,
+        var(--gradient-start, #0077ff) 50%,
+        var(--gradient-mid, #2566c9) 75%,
+        var(--gradient-start, #0052cc) 100%
+    );
+    background-size: 400% 400%;
+    animation: gradientFlow 8s ease infinite;
+    z-index: -1;
+    opacity: 0.9;
+    transition: opacity 0.5s ease;
+    will-change: transform, opacity;
+}
+
+body.loaded::before {
     opacity: 1;
-    transform: translateY(0);
-  }
 }
 
-@keyframes bounceIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+body[data-theme="ocean"] {
+    --gradient-start: #0066cc;
+    --gradient-mid: #4d94ff;
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+body[data-theme="sunset"] {
+    --gradient-start: #e65c00;
+    --gradient-mid: #ff8533;
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+body[data-theme="forest"] {
+    --gradient-start: #1a8d1a;
+    --gradient-mid: #2eb82e;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+body[data-theme="aurora"] {
+    --gradient-start: #4a148c;
+    --gradient-mid: #7b1fa2;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s ease-out;
+body {
+    transition: --gradient-start 0.5s ease, --gradient-mid 0.5s ease;
 }
 
-.animate-bounce-in {
-  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+.container {
+    position: relative;
+    z-index: 1;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
 }
 
-.animate-shake {
-  animation: shake 0.2s ease-in-out 0s 2;
+button, input {
+    text-shadow: none;
+    font-weight: 500;
 }
 
-.group:hover .group-hover\:animate-bounce {
-  animation: bounce 1s infinite;
+button {
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.group:hover .group-hover\:rotate-12 {
-  transform: rotate(12deg);
+input::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
 }
 
-.group:hover .group-hover\:translate-x-1 {
-  transform: translateX(0.25rem);
+input {
+    color: #ffffff;
+    font-weight: 500;
 }
 
-.group:hover .group-hover\:scale-110 {
-  transform: scale(1.1);
-}
-
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-.duration-300 {
-  transition-duration: 300ms;
-}
-
-.ease-out {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-}
-
-.hover\:scale-105:hover {
-  transform: scale(1.05);
-}
-
-.hover\:-translate-y-1:hover {
-  transform: translateY(-0.25rem);
-}
-
-/* Weather Card Animations */
 .weather-card {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: slideUp 0.5s ease-out forwards;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.forecast-card {
+    animation: fadeIn 0.5s ease-out forwards;
 }
 
 .weather-icon {
-  animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
-.weather-detail {
-  transition: all 0.3s ease;
+.theme-transition {
+    transition: all 0.5s ease-in-out;
 }
 
-.weather-detail:hover {
-  transform: translateY(-5px);
-  background-color: rgba(255, 255, 255, 0.2);
+.temp-transition {
+    transition: all 0.3s ease-in-out;
 }
 
-/* Forecast Card Animations */
-.forecast-card {
-  opacity: 0;
-  animation: fadeIn 0.5s ease-in-out forwards;
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
 }
 
-.forecast-card:nth-child(1) { animation-delay: 0.1s; }
-.forecast-card:nth-child(2) { animation-delay: 0.2s; }
-.forecast-card:nth-child(3) { animation-delay: 0.3s; }
-.forecast-card:nth-child(4) { animation-delay: 0.4s; }
-.forecast-card:nth-child(5) { animation-delay: 0.5s; }
+.animate-bounce-in {
+    animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.text-white {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.text-white-80 {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.1);
+    }
+    80% {
+        opacity: 1;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
