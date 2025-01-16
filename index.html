@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A beautiful weather app that shows current conditions and 5-day forecast" />
+    <meta name="theme-color" content="#4F46E5" />
+    <title>WeatherVue | Live Weather & Forecast</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://api.openweathermap.org">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Preload CSS -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Inline critical CSS -->
+    <style>
+      .loading {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      .loaded {
+        opacity: 1;
+      }
+    </style>
+    
+    <!-- Defer non-critical CSS -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script>
+      // Performance optimization: Cache DOM queries
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('loaded');
+      });
+      
+      // Tailwind config
+      tailwind.config = {
+        theme: {
+          extend: {
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'slide-up': 'slideUp 0.5s ease-out',
+              'bounce-in': 'bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+              'spin-slow': 'spin 3s linear infinite',
+              'float': 'float 3s ease-in-out infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              bounceIn: {
+                '0%': { transform: 'scale(0.3)', opacity: '0' },
+                '50%': { transform: 'scale(1.05)' },
+                '70%': { transform: 'scale(0.9)' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+            },
+          },
+        },
+      }
+    </script>
+  </head>
+  <body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 loading">
+    <div class="bg-white/20 backdrop-blur-lg rounded-xl p-4 sm:p-6 md:p-8 w-full max-w-2xl shadow-2xl 
+                transform transition-all duration-500 ease-out animate-slide-up
+                hover:shadow-3xl">
+      
+      <!-- Settings Bar -->
+      <div class="flex justify-between items-center mb-6 animate-bounce-in">
+        <button 
+          id="locationButton" 
+          class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
+                 transition-all duration-300 flex items-center gap-2 group"
+        >
+          <i class="fas fa-location-dot group-hover:animate-bounce"></i>
+          <span>Use My Location</span>
+        </button>
+        
+        <div class="flex items-center gap-4">
+          <button 
+            id="unitToggle" 
+            class="bg-blue-500/50 hover:bg-blue-600/50 text-white px-4 py-2 rounded-lg
+                   transition-all duration-300 flex items-center gap-2"
+          >
+            <i class="fas fa-temperature-half"></i>
+            <span>°C</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="mb-6 flex flex-col sm:flex-row gap-2 sm:gap-0 animate-bounce-in">
+        <input 
+          type="text" 
+          id="cityInput" 
+          placeholder="Enter city name" 
+          class="w-full sm:w-auto flex-grow px-4 py-3 rounded-lg sm:rounded-l-lg sm:rounded-r-none 
+                 border-2 border-blue-300/50 bg-white/10 text-white placeholder-white/60
+                 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+                 transition-all duration-300 text-lg
+                 hover:bg-white/20 transform hover:-translate-y-0.5"
+        >
+        <button 
+          id="searchButton" 
+          class="w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-lg sm:rounded-l-none sm:rounded-r-lg
+                 hover:bg-blue-600 active:bg-blue-700 
+                 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg
+                 flex items-center justify-center gap-2 group
+                 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-500"
+        >
+          <i class="fas fa-search text-lg transition-transform group-hover:rotate-12"></i>
+          <span class="transition-transform group-hover:translate-x-1">Search</span>
+        </button>
+      </div>
+
+      <!-- Current Weather -->
+      <div id="weatherCard" class="text-white mb-6">
+        <div id="weatherData" class="text-center transform transition-all duration-500">
+          <div class="flex items-center justify-center space-x-3 p-4 bg-white/10 rounded-lg
+                      hover:bg-white/20 transition-all duration-300 group cursor-pointer">
+            <i class="fas fa-cloud-sun text-4xl sm:text-5xl animate-float text-blue-200 group-hover:text-blue-100"></i>
+            <p class="text-lg sm:text-xl transition-all duration-300 group-hover:translate-x-1">
+              Enter a city to see weather details
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5-Day Forecast -->
+      <div id="forecast" class="hidden animate-slide-up">
+        <h3 class="text-white text-xl font-semibold mb-4">5-Day Forecast</h3>
+        <div id="forecastData" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+          <!-- Forecast cards will be inserted here -->
+        </div>
+      </div>
+
+    </div>
+    <script type="module" src="/src/script.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(console.error);
+        });
+      }
+    </script>
+  </body>
+</html>
